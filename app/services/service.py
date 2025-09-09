@@ -1,50 +1,35 @@
-import os
-import httpx
-import json
 from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
 
-API_KEY = os.getenv("GEMINI_API_KEY")
-GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+client = genai.Client()
 
-async def generate_cover_letter(cv_text:str, job_description:str, formality:str) -> str:
+async def generate_prompt(cv_text:str, job_description:str, formality:str):
     prompt = f"""
-    write a {formality} cover letter for this job:
+    Using the job description and my CV, write a {formality} and highly personalized cover letter.
     
     Job Description:
     {job_description}
-    
-    with my cv:
+
+    My CV:
     {cv_text}
+
+    Instructions:
+    - Tailor each paragraph to show why I am a perfect fit for this role.
+    - Use specific examples from my CV that match the requirements in the job description.
+    - Keep the language professional but engaging.
+    - Avoid generic statements like "I am a hard worker."
+    - Conclude with enthusiasm and a call to action for an interview.
     """
     
-    headers = {
-        "Content-Type": "application/json",
-    }
-    
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {
-                        "text": prompt
-                    }
-                ]
-            }
-        ],
-        "generationConfig": {
-            "temperature": 0.7,
-            "maxOutputTokens": 500
-        }
-    }
-    
-    url_with_key = f"{GEMINI_API_URL}?key={API_KEY}"
-    
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url_with_key, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        return data
-    
     return prompt
+
+async def generate_cover_letter(cv_text:str, job_description:str, formality:str):
+    prompt = await generate_prompt(cv_text, job_description, formality)
+    
+    response = client.models.generate_content(
+        model="gemini-2.5-flash", contents=prompt
+    )
+    
+    return response.text
