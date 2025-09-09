@@ -6,9 +6,9 @@ async def exctract_text_from_pdf(file: UploadFile) -> str:
     reader = PyPDF2.PdfReader(file.file)
     
     # extract text with page breaks
-    raw_text = "\n\n --- PAGE BREAKS --- \n\n".join[
+    raw_text = "\n\n --- PAGE BREAKS --- \n\n".join(
         [page.extract_text() or "" for page in reader.pages]
-    ]
+    )
     
     # clean up spacing
     cleaned_text = re.sub(r'[ \t]', ' ', raw_text)
