@@ -1,6 +1,7 @@
 from fastapi import APIRouter, UploadFile, Form, status, HTTPException
 from app.utils.parser import exctract_text_from_pdf
 from app.services.service import generate_cover_letter
+from typing import Optional
 
 router = APIRouter()
 
@@ -22,7 +23,9 @@ async def health():
 async def generate(
     file_cv: UploadFile,
     job_description: str = Form(...),
-    tone: str = Form("formal")
+    tone: str = Form("formal"),
+    company_name_address: Optional[str] = Form(None),
+    additional_request: Optional[str] = Form(None),
 ):
     # validation of the file
     file_cv_validated = await validate_file_cv(file_cv)
@@ -31,7 +34,7 @@ async def generate(
     cv_text = await exctract_text_from_pdf(file_cv_validated)
     
     # generating cover letter with gemini
-    letter = await generate_cover_letter(cv_text, job_description, tone)
+    letter = await generate_cover_letter(cv_text, job_description, tone, company_name_address, additional_request)
     
     return {"Cover Letter": letter}
 
