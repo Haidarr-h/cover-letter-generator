@@ -1,10 +1,15 @@
 from dotenv import load_dotenv
 from google import genai
+from google.genai import errors
 from datetime import date
+import logging
+
 
 load_dotenv()
 
 client = genai.Client()
+
+logger = logging.getLogger(__name__)
 
 async def generate_prompt(cv_text:str, job_description:str, formality:str, company_name_address:str=None, additional_request:str=None):
     today_date = date.today()
@@ -42,9 +47,19 @@ async def generate_prompt(cv_text:str, job_description:str, formality:str, compa
 async def generate_cover_letter(cv_text:str, job_description:str, formality:str, company_name_address:str=None, additional_request:str=None):
     prompt = await generate_prompt(cv_text, job_description, formality, company_name_address, additional_request)
     
-    response = client.models.generate_content(
-        model="gemini-2.5-flash", contents=prompt
-    )
     
-    # return prompt
-    return response.text
+    try :
+        response = client.models.generate_content(
+            model="gemini-2.5-flash", contents=prompt
+        )
+        
+        return response.text
+        
+    except errors.ServerError as e:
+        logger.error(f"service error: {e}")
+        raise RuntimeError("AI service temporarily unavailable. Please try again later.") from e
+    
+    except Exception as e:
+        logger.error(f"service error: {e}")
+        # Unknown/unexpected issue
+        raise RuntimeError("Unexpected error occurred while generating cover letter.") from e
